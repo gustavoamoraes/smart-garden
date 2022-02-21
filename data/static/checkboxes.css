@@ -1,0 +1,103 @@
+.custom-control-label{
+    user-select: none;
+}
+
+/* Air Humidity */
+
+.custom-control-input-air:focus~.custom-control-label::before 
+{
+    border-color: #53BDB7 !important;
+    box-shadow: 0 0 0 0.2rem #53bdb87e !important;
+}
+
+.custom-control-input-air:checked~.custom-control-label::before 
+{
+    border-color: #53BDB7 !important;
+    background-color: #53BDB7 !important;
+}
+
+.custom-control-input-air:focus:not(:checked)~.custom-control-label::before 
+{
+    border-color: #53BDB7 !important;
+}
+
+.custom-control-input-air:not(:disabled):active~.custom-control-label::before 
+{
+    background-color: #53BDB7 !important;
+    border-color: #53BDB7!important;
+}
+
+/* Earth Humidity */
+
+.custom-control-input-earth:focus~.custom-control-label::before 
+{
+    border-color: #EA9363 !important;
+    box-shadow: 0 0 0 0.2rem rgba(204, 114, 40, 0.25) !important;
+}
+
+.custom-control-input-earth:checked~.custom-control-label::before 
+{
+    border-color: #EA9363 !important;
+    background-color: #EA9363 !important;
+}
+
+.custom-control-input-earth:focus:not(:checked)~.custom-control-label::before 
+{
+    border-color: #EA9363 !important;
+}
+
+.custom-control-input-earth:not(:disabled):active~.custom-control-label::before 
+{
+    background-color: #EA9363 !important;
+    border-color: #EA9363 !important;
+}
+
+/* Air Temperature */
+
+.custom-control-input-temp:focus~.custom-control-label::before 
+{
+    border-color: #9F87BF !important;
+    box-shadow: 0 0 0 0.2rem rgba(158, 40, 204, 0.25) !important;
+}
+
+.custom-control-input-temp:checked~.custom-control-label::before 
+{
+    border-color: #9F87BF !important;
+    background-color: #9F87BF !important;
+}
+
+.custom-control-input-temp:focus:not(:checked)~.custom-control-label::before 
+{
+    border-color: #9F87BF !important;
+}
+
+.custom-control-input-temp:not(:disabled):active~.custom-control-label::before 
+{
+    background-color: #9F87BF  !important;
+    border-color: #9F87BF  !important;
+}
+
+/* Light Intensity */
+
+.custom-control-input-light:focus~.custom-control-label::before 
+{
+    border-color: #F0CE69 !important;
+    box-shadow: 0 0 0 0.2rem rgba(204, 188, 40, 0.25) !important;
+}
+
+.custom-control-input-light:checked~.custom-control-label::before 
+{
+    border-color: #F0CE69!important;
+    background-color: #F0CE69!important;
+}
+
+.custom-control-input-light:focus:not(:checked)~.custom-control-label::before 
+{
+    border-color: #F0CE69 !important;
+}
+
+.custom-control-input-light:not(:disabled):active~.custom-control-label::before 
+{
+    background-color: #F0CE69  !important;
+    border-color: #F0CE69  !important;
+}

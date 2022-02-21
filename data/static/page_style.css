@@ -1,0 +1,57 @@
+.info-card{
+    width: 500px;
+    height: 300px;
+    border-width: 1px;
+    border-color: green;
+}
+
+.card {
+    flex: 1;
+}
+
+html 
+{
+    height: auto !important;
+    padding-bottom: 100px !important;
+}
+
+.card-shadow
+{
+    box-shadow: 1px 2px 3px rgba(0, 0, 0, .1);
+}
+
+.info-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.icon-size-md
+{
+    font-size: 20px;
+}
+
+.icon-size-xlg
+{
+    font-size: 40px;
+}
+
+.air-humidity-color {
+    background-color: #53BDB7 !important;
+    color: black;
+}
+
+.earth-color {
+    background-color: #EA9363 !important;
+    color: black;
+}
+
+.air-temp-color {
+    background-color: #9F87BF !important;
+    color: black;
+}
+
+.light-color {
+    background-color: #F0CE69 !important;
+    color: black;
+}
