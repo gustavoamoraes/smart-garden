@@ -15,8 +15,9 @@
 #define LDR_PIN 33
 #define EARTH_0 35
 
-#define POST_INTERVAL 60
-#define MEASUREMENT_INTERVAL 60
+#define POST_INTERVAL 120
+#define TIME_UPDATE_INTERVAL 120
+#define MEASUREMENT_INTERVAL 120
 
 RTC_PCF8563 rtc;
 const char *ssid = "AUREO";
@@ -48,15 +49,15 @@ void wifiConnect()
 {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  Serial.println ("Connecting to WiFi");
+  // Serial.println ("Connecting to WiFi");
 
   while (WiFi.status() != WL_CONNECTED) 
   {
-    Serial.print('.');
-    delay(500);
+    // Serial.print('.');
+    delay(2);
   }
 
-  Serial.printf ("Online");
+  // Serial.printf ("Online");
 }
 
 void setEpochNow()
@@ -64,7 +65,7 @@ void setEpochNow()
   DateTime now = rtc.now();
   g_epochNow = now.unixtime();
 
-  evManager->add(g_epochNow + 60, &setEpochNow);
+  evManager->add(g_epochNow + TIME_UPDATE_INTERVAL, &setEpochNow);
 }
 
 void postAllMeasurements ()
@@ -93,7 +94,7 @@ void makeAllMeasurements()
 void initiateIrrigation (int seconds)
 {
   setValveOn();
-  evManager->add(rtc.now().unixtime() + seconds, &setValveOff);
+  evManager->add(g_epochNow + seconds, &setValveOff);
 }
 
 void setTimeByNTP (RTC_PCF8563& rtc)
@@ -115,7 +116,7 @@ void initializeSensors()
 
 void setup()
 {
-  Serial.begin(115200);
+  // Serial.begin(115200);
   SPIFFS.begin();
 
   initializeSensors();
@@ -123,8 +124,7 @@ void setup()
   // setValveOff ();
 
   if (!rtc.begin()) {
-    Serial.println("Couldn't find RTC");
-    Serial.flush();
+    // Serial.println("Couldn't find RTC");
     while (1) delay(10);
   }
 
@@ -137,7 +137,6 @@ void setup()
   evManager->add(g_epochNow+POST_INTERVAL, postAllMeasurements);
 
   startServer();
-  xTaskCreate(&serveFoverer, "WebServer", 50000, NULL, 0, NULL); //Start web sever thread
 }
 
 void loop () 

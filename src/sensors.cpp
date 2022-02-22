@@ -8,7 +8,7 @@
 //LDR - https://www.allaboutcircuits.com/projects/design-a-luxmeter-using-a-light-dependent-resistor
 #define MAX_ADC_READING 4096.0f
 #define ADC_REF_VOLTAGE 3.3f
-#define REF_RESISTANCE 9930.0f 
+#define REF_RESISTANCE 297.0f 
 #define LUX_CALC_SCALAR 12518931.0f
 #define LUX_CALC_EXPONENT -1.405f
 
@@ -79,7 +79,7 @@ Measurement* readDhtHumidity(Sensor* sensor)
   sensors_event_t event;
   DHT_Unified* dht = (DHT_Unified*) sensor->sensor_class;
   dht->humidity().getEvent(&event);
-  return new Measurement(event.temperature, MeasurementType::AIR_HUM, g_epochNow, sensor);
+  return new Measurement(event.relative_humidity, MeasurementType::AIR_HUM, g_epochNow, sensor);
 }
 
 Measurement* readEarthSensor (Sensor* sensor)

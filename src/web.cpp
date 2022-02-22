@@ -224,7 +224,7 @@ int openDb(const char *filename, sqlite3 **db)
       Serial.printf("Can't open database: %s\n", sqlite3_errmsg(*db));
       return rc;
   } else {
-      Serial.printf("Opened database successfully\n");
+      // Serial.printf("Opened database successfully\n");
   }
   return rc;
 }
@@ -347,6 +347,8 @@ void startServer ()
 
   bindAll();
   server.begin();
+
+  xTaskCreate(&serveFoverer, "WebServer", 50000, NULL, 0, NULL); //Start web sever thread
 }
 
 //Thread function

@@ -17,7 +17,6 @@ void EventsManager::advance ()
     for (auto event = eventsInTime.first; event != eventsInTime.second; ++event)
     {
         event->second();
-        Serial.print("a");
     } 
 
     updateAlarm ();
