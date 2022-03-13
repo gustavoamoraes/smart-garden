@@ -2,6 +2,7 @@
 #include "NTPClient.h"
 #include <Arduino.h>
 #include "sensors.h"
+#include "sqlite3.h"
 #include "SPIFFS.h"
 #include "events.h"
 #include "RTClib.h"
@@ -10,7 +11,7 @@
 #include "web.h"
 
 // #define ALARM_INTERRUPT_PIN 27
-#define DHT11_PIN 18
+#define DHT_PIN 18
 #define VALVE_PIN 5
 #define LDR_PIN 33
 #define EARTH_0 35
@@ -20,17 +21,17 @@
 #define MEASUREMENT_INTERVAL 120
 
 RTC_PCF8563 rtc;
+sqlite3 *db;
+
 const char *ssid = "AUREO";
 const char *password = "BananaCanela";
 
 WiFiUDP udp;
 NTPClient ntpClient = NTPClient(udp);
+
 EventsManager* evManager = new EventsManager();
 
-//Sensors
-DHT_Unified dht(DHT11_PIN, DHT11);
-
-int g_epochNow = 0;
+DHT_Unified dht(DHT_PIN, DHT22);
 
 Sensor* sensors[] = 
 { 
@@ -42,6 +43,8 @@ Sensor* sensors[] =
 
 const int sensorCount = sizeof(sensors)/sizeof(void*);
 
+int g_epochNow = 0;
+
 void setValveOn () { digitalWrite(VALVE_PIN, LOW);}
 void setValveOff () { digitalWrite(VALVE_PIN, HIGH);}
 
@@ -49,15 +52,11 @@ void wifiConnect()
 {
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  // Serial.println ("Connecting to WiFi");
 
   while (WiFi.status() != WL_CONNECTED) 
   {
-    // Serial.print('.');
     delay(2);
   }
-
-  // Serial.printf ("Online");
 }
 
 void setEpochNow()
@@ -108,7 +107,7 @@ void setTimeByNTP (RTC_PCF8563& rtc)
 void initializeSensors()
 {
   dht.begin();
-  pinMode(DHT11_PIN, INPUT);
+  pinMode(DHT_PIN, INPUT);
   pinMode(VALVE_PIN, OUTPUT_OPEN_DRAIN);
   pinMode(LDR_PIN, INPUT);
   pinMode(EARTH_0, INPUT);
@@ -116,15 +115,18 @@ void initializeSensors()
 
 void setup()
 {
-  // Serial.begin(115200);
   SPIFFS.begin();
+
+  if (sqlite3_open("/spiffs/my.db", &db))
+    return;
+
+  sqlite3_initialize();
+  sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS measurements (value FLOAT, type TEXT, date DATETIME, sensor_id INT)", NULL, NULL, NULL);
 
   initializeSensors();
   wifiConnect();
-  // setValveOff ();
 
   if (!rtc.begin()) {
-    // Serial.println("Couldn't find RTC");
     while (1) delay(10);
   }
 
@@ -139,6 +141,7 @@ void setup()
   startServer();
 }
 
+//Checks if the alarm fired each second
 void loop () 
 {
   if(rtc.alarmFired()){ 

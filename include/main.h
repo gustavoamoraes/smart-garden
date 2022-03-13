@@ -1,10 +1,10 @@
 #pragma once
 
 #include <RTClib.h>
-#include "config.h"
+#include <sqlite3.h>
 
-void updateMainConfig (Config* new_config);
 void initiateIrrigation(int seconds);
 
 extern RTC_PCF8563 rtc;
+extern sqlite3 *db;
 extern int g_epochNow;

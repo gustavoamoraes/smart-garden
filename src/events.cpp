@@ -8,6 +8,7 @@ void EventsManager::add (int unixtime, void (*cb)())
     updateAlarm ();
 }
 
+//Invokes the current closest event and updates the alarm time to the next
 void EventsManager::advance ()
 { 
     auto copy = std::multimap<int, void (*)()> (events);
@@ -34,6 +35,7 @@ void EventsManager::remove (int key, void (*value)())
     } 
 }
 
+//Set rtc alarm to the time of the next event
 void EventsManager::updateAlarm ()
 {  
     if(!events.empty())

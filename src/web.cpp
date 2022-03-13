@@ -1,11 +1,12 @@
 #include <uri/UriBraces.h>
 #include <ArduinoJson.h>
 #include <WebServer.h>
-#include <sqlite3.h>
 #include "SPIFFS.h"
+
 #include "json.h"
 #include "main.h"
-#include <map>
+#include "web.h"
+#include "sql.h"
 
 //Network
 const String static_files_path = "/static/";
@@ -13,7 +14,6 @@ WebServer server(80);
 
 //Database
 int rc;
-sqlite3 *db;
 const char *tail;
 sqlite3_stmt *res;
 
@@ -21,22 +21,6 @@ sqlite3_stmt *res;
 String jsonDocChunck = "";
 int chuncksSent = 0;
 const int minLenght = 1024;
-
-//API 
-const std::map<String, String> condition_map = 
-{
-    { "gt", ">" },
-    { "lt", "<" },
-};
-
-const char* delimiter = "__";
-
-struct RequestArgument 
-{
-  String key;
-  String value;
-};
-//
 
 String getMIMEType(String filename) 
 {
@@ -53,20 +37,10 @@ String getMIMEType(String filename)
     return "application/javascript";
   } else if (filename.endsWith(".png")) {
     return "image/png";
-  } else if (filename.endsWith(".gif")) {
-    return "image/gif";
   } else if (filename.endsWith(".jpg")) {
     return "image/jpeg";
   } else if (filename.endsWith(".ico")) {
     return "image/x-icon";
-  } else if (filename.endsWith(".xml")) {
-    return "text/xml";
-  } else if (filename.endsWith(".pdf")) {
-    return "application/x-pdf";
-  } else if (filename.endsWith(".zip")) {
-    return "application/x-zip";
-  } else if (filename.endsWith(".gz")) {
-    return "application/x-gzip";
   }
   return "text/plain";
 }
@@ -95,95 +69,6 @@ void handleRoot()
   server.send(200, "text/html", "<script type=\"text/javascript\">window.location.href = \"static/index.html\";</script>");
 }
 
-String getQueryToSQL (String& table_name, RequestArgument* args, int arg_count)
-{
-    String sql = "SELECT * FROM " + table_name;
-
-    if(arg_count){
-      sql += " WHERE ";
-
-      for (size_t i = 0; i < arg_count; i++)
-      {
-        if (i) sql += " AND ";
-
-        String param_name = args[i].key;
-        String param_value = args[i].value;
-
-        char buf[36];
-        param_name.toCharArray(buf, param_name.length()+1);
-
-        char* column_name = strtok(buf, delimiter);
-        char* condition_id = strtok(NULL, delimiter);     
-
-        String condition;
-
-        if(!condition_id){
-          condition = "=";
-        }else{
-          condition = condition_map.at(condition_id);
-        }
-
-        sql += column_name;
-        sql += " ";
-        sql += condition;
-        sql += " ";
-        sql += param_value;
-      }
-    }
-
-    return sql;
-}
-
-String jsonToSQLInsert (String& table, String& json_values)
-{
-    String sql = "INSERT INTO " + table;
-
-    DynamicJsonDocument doc(128);
-    deserializeJson(doc, json_values);
-    JsonObject root = doc.as<JsonObject>();
-
-    String columns = " (";
-    String values = " (";
-
-    bool first = true;
-
-    for (JsonPair kv : root) 
-    {
-      if(!first){
-        columns += ","; 
-        values += ","; 
-      }else{
-        first=false;
-      }
-
-      columns += kv.key().c_str();
-
-      bool isText = kv.value().is<JsonString>();
-      bool isFloat = kv.value().is<JsonFloat>();
-      bool isInteger = kv.value().is<JsonInteger>();     
-
-      if(isText){
-        values += "\'" ;
-        values += kv.value().as<const char*>() ;
-        values += "\'";
-      }
-      else if (isFloat){
-        values += kv.value().as<float>();
-      }
-      else if (isInteger){
-        values += kv.value().as<int>();
-      }
-    }
-
-    columns += ")";
-    values += ")";
-
-    sql += columns;
-    sql += " VALUES" + values;
-
-    return sql;
-}
-
 void write(const char* text)
 {
   jsonDocChunck += text;
@@ -195,6 +80,7 @@ void write(const char* text)
   }
 }
 
+//Sends the result in json of the sql
 void sendSQLResult(const char* sql)
 {
   chuncksSent = 0;
@@ -206,7 +92,6 @@ void sendSQLResult(const char* sql)
   rc = sqlite3_prepare_v2(db, sql, 1000, &res, &tail);
 
   if(rc != SQLITE_OK){
-    Serial.print(sqlite3_errmsg(db));
     return;
   }
 
@@ -217,18 +102,7 @@ void sendSQLResult(const char* sql)
   server.sendContent(jsonDocChunck);
 }
 
-int openDb(const char *filename, sqlite3 **db) 
-{
-  int rc = sqlite3_open(filename, db);
-  if (rc) {
-      Serial.printf("Can't open database: %s\n", sqlite3_errmsg(*db));
-      return rc;
-  } else {
-      // Serial.printf("Opened database successfully\n");
-  }
-  return rc;
-}
-
+//Inserts a json object in the table
 int insertJsonObject (String& table_name, String& json)
 {
   String sql = jsonToSQLInsert(table_name, json);
@@ -238,10 +112,10 @@ int insertJsonObject (String& table_name, String& json)
       Serial.print(sqlite3_errmsg(db));
       return 1;
   }
-
   return 0;
 }
 
+//All web paths
 void bindAll() 
 {
     // Home
@@ -257,25 +131,6 @@ void bindAll()
         }
     });
 
-    // server.on ( "/config/", []()
-    // {
-    //   if( server.method() == HTTP_POST)
-    //   {
-    //     if (!server.args())
-    //       return;
-
-    //     String config_json = server.arg(0);
-    //     Config* new_config = new Config(config_json);
-    //     updateMainConfig(new_config);
-    //     server.send ( 200 );
-    //   }
-    //   else if (server.method() == HTTP_GET)
-    //   { 
-    //     String content; main_config->serialize(content);
-    //     server.send ( 200 , "application/json", content);
-    //   }
-    // });
-
     server.on ( UriBraces("/water/{}"), HTTP_GET, []()
     {
       int seconds = server.pathArg(0).toInt();
@@ -283,6 +138,7 @@ void bindAll()
       server.send(200);
     });
 
+    //Delete the database
     server.on ( "/reset", HTTP_GET, []()
     {
       if (SPIFFS.remove("/my.db")){
@@ -292,7 +148,7 @@ void bindAll()
       }
     });
 
-    //APIs
+    //GET: Sends the whole table. POST: inserts a item on the table
     server.on(UriBraces("/api/{}"), []()
     {   
         String table = server.pathArg(0);
@@ -318,6 +174,7 @@ void bindAll()
         }
     });
 
+    //Sends the latests entry of a table
     server.on(UriBraces("/api/{}/latest"), HTTP_GET, []()
     {   
         String table = server.pathArg(0);
@@ -336,26 +193,20 @@ void bindAll()
     });
 }
 
-void startServer ()
-{
-  if (openDb("/spiffs/my.db", &db))
-    return;
-
-  sqlite3_initialize();
-
-  sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS measurements (value FLOAT, type TEXT, date DATETIME, sensor_id INT)", NULL, NULL, NULL);
-
-  bindAll();
-  server.begin();
-
-  xTaskCreate(&serveFoverer, "WebServer", 50000, NULL, 0, NULL); //Start web sever thread
-}
-
 //Thread function
 void serveFoverer (void* data) 
 {
-  while (true)
-  {
+  while (true){
     server.handleClient();
   }
+}
+
+void startServer ()
+{
+  bindAll();
+
+  server.begin();
+
+  //Start web sever thread
+  xTaskCreate(&serveFoverer, "WebServer", 50000, NULL, 0, NULL); 
 }
